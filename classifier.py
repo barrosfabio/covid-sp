@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import csv
+import os
 
 # Slice inputs and outputs
 def slice_data(dataset):
@@ -25,21 +26,20 @@ def convert_to_binary_output(predicted):
     return predicted_binary
 
 # Write result to formatted csv
-def write_csv(sample_ids, predicted, probability_array):
+def write_csv(sample_ids, predicted, probability_array, file_path):
     header = ['id_exame','class','prob']
-    with open('result.csv', 'w', newline='') as csvfile:
+    with open(file_path + '\\result.csv', 'w', newline='') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=',',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL, dialect='excel')
         filewriter.writerow(header)
         for i in range(0, len(predicted)):
-            id = sample_ids[i]
-            result_row = [id[:-4],predicted[i],probability_array[i]]
+            result_row = [sample_ids[i],predicted[i],probability_array[i]]
             filewriter.writerow(result_row)
 
 
 # File path
-train_data = 'feature_matrix_train.csv'
-test_data = 'feature_matrix_test.csv'
+train_data = 'Feature Matrix Train\\feature_matrix_train.csv'
+test_data = 'Feature Matrix Test\\feature_matrix_test.csv'
 
 # Load data
 train_data_frame = pd.read_csv(train_data)
@@ -65,7 +65,11 @@ probability_c1 = proba[:,0]
 # Convert to binary output
 predicted = convert_to_binary_output(predicted)
 
+result_dir = 'Result'
+if not os.path.isdir(result_dir):
+    os.mkdir(result_dir)
+
 # Save result in csv
-write_csv(sample_ids, predicted, probability_c1)
+write_csv(sample_ids, predicted, probability_c1, result_dir)
 
 
