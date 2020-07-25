@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
 import csv
 import os
 
@@ -40,13 +42,19 @@ def write_csv(sample_ids, predicted, probability_array, file_path):
 # File path
 train_data = 'Feature Matrix Train\\feature_matrix_train.csv'
 test_data = 'Feature Matrix Test\\feature_matrix_test.csv'
+classifier = 'svm'
 
 # Load data
 train_data_frame = pd.read_csv(train_data)
 test_data_frame = pd.read_csv(test_data)
 
 # Define the classifier
-classifier = RandomForestClassifier(n_estimators=250, criterion='entropy',random_state=42)
+if(classifier == 'rf'):
+    classifier = RandomForestClassifier(criterion = "gini", min_samples_leaf = 10,  min_samples_split = 20, max_leaf_nodes = None, max_depth = 10)
+elif(classifier == 'mlp'):
+    classifier = MLPClassifier(hidden_layer_sizes=(60), activation='logistic', verbose=False, early_stopping=True, validation_fraction=0.2)
+elif(classifier == 'svm'):
+    classifier = SVC(gamma='auto', probability=True)
 
 # Slice inputs and outputs
 [input_data_train, output_data_train] = slice_data(train_data_frame)
