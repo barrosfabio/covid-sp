@@ -40,6 +40,9 @@ image class in the last column. The other one will have the testing dataset, wit
     
     1.3 classifier is a variable to set which type of classifier we will use: 'rf' for Random Forest, 'mlp' for Multilayer Perceptron, 'svm' for SVM.
     
+    1.4 resample is a flag to indicate if SMOTE over-sampling technique will be used or not. It will create new synthetic samples if the
+    dataset is imbalanced.
+    
 2. After making sure we are using the correct parameters, run the classifier.py script.
 
 3. After running, check in your project the 'Results' directory. It will be created a csv file with the results. The format is the following:
