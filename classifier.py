@@ -7,6 +7,10 @@ import os
 from imblearn.over_sampling import SMOTE
 import numpy as np
 
+POSITIVE_CLASS = 'COVID'
+NEGATIVE_CLASS_1 = 'NORMAIS'
+NEGATIVE_CLASS_2 = 'alterado'
+
 # Slice inputs and outputs
 def slice_data(dataset):
     # Slicing the input and output data
@@ -20,11 +24,11 @@ def convert_to_binary_output(predicted):
     predicted_binary = []
 
     for predicted_class in predicted:
-        if(predicted_class == 'COVID'):
+        if(predicted_class == POSITIVE_CLASS):
             predicted_binary.append(1)
-        elif(predicted_class == 'NAO COVID'):
+        elif(predicted_class == NEGATIVE_CLASS_1):
             predicted_binary.append(0)
-        elif(predicted_class == 'NORMAIS'):
+        elif(predicted_class == NEGATIVE_CLASS_2):
             predicted_binary.append(0)
 
     return predicted_binary
