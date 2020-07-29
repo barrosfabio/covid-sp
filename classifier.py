@@ -9,7 +9,7 @@ import numpy as np
 
 POSITIVE_CLASS = 'COVID'
 NEGATIVE_CLASS_1 = 'NORMAIS'
-NEGATIVE_CLASS_2 = 'alterado'
+NEGATIVE_CLASS_2 = 'notCOVID'
 
 # Slice inputs and outputs
 def slice_data(dataset):
@@ -36,7 +36,7 @@ def convert_to_binary_output(predicted):
 # Write result to formatted csv
 def write_csv(sample_ids, predicted, probability_array, file_path):
     header = ['id_exame','class','prob']
-    with open(file_path + '\\result.csv', 'w', newline='') as csvfile:
+    with open(file_path, 'w', newline='') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=',',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL, dialect='excel')
         filewriter.writerow(header)
@@ -55,9 +55,9 @@ def count_per_class(output_data):
 
 
 # Options
-train_data = 'Feature Matrix Train\\feature_matrix_train.csv'
-test_data = 'Feature Matrix Test\\feature_matrix_test.csv'
-classifier = 'rf'
+train_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train\\covid_train.csv'
+test_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_test\\covid_test.csv'
+classifier = 'mlp'
 resample = True
 
 # Load data
@@ -66,11 +66,11 @@ test_data_frame = pd.read_csv(test_data)
 
 # Define the classifier
 if(classifier == 'rf'):
-    classifier = RandomForestClassifier(criterion = "gini", min_samples_leaf = 10,  min_samples_split = 20, max_leaf_nodes = None, max_depth = 10)
+    clf = RandomForestClassifier(criterion = "gini", min_samples_leaf = 10,  min_samples_split = 20, max_leaf_nodes = None, max_depth = 10)
 elif(classifier == 'mlp'):
-    classifier = MLPClassifier(hidden_layer_sizes=(60), activation='logistic', verbose=False, early_stopping=True, validation_fraction=0.2)
+    clf = MLPClassifier(hidden_layer_sizes=(60), activation='logistic', verbose=False, early_stopping=True, validation_fraction=0.2)
 elif(classifier == 'svm'):
-    classifier = SVC(gamma='auto', probability=True)
+    clf = SVC(gamma='auto', probability=True)
 
 # Slice inputs and outputs
 [input_data_train, output_data_train] = slice_data(train_data_frame)
@@ -82,17 +82,22 @@ count_per_class(output_data_train)
 # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
 if resample:
     resampler = SMOTE(sampling_strategy='auto', random_state=42, k_neighbors=5, n_jobs=4)
+    print("Resampling data")
     [input_data_train, output_data_train] = resampler.fit_resample(input_data_train, output_data_train)# Original class distribution
-
+    print("Done resampling")
     # Resampled class distribution
     count_per_class(output_data_train)
 
 # Train the classifier
-classifier = classifier.fit(input_data_train, output_data_train)
+print("Started training")
+clf = clf.fit(input_data_train, output_data_train)
+print("Finished training")
 
 # Predict
-predicted = classifier.predict(input_data_test)
-proba = classifier.predict_proba(input_data_test)
+print("Prediction")
+predicted = clf.predict(input_data_test)
+proba = clf.predict_proba(input_data_test)
+print("Finished prediction")
 
 # Filter probability array
 probability_c1 = proba[:,0]
@@ -104,8 +109,10 @@ result_dir = 'Result'
 if not os.path.isdir(result_dir):
     os.mkdir(result_dir)
 
+file_path = result_dir + '\\result_'+ classifier +'_resample_'+str(resample)+'.csv'
+
 # Save result in csv
-write_csv(sample_ids, predicted, probability_c1, result_dir)
+write_csv(sample_ids, predicted, probability_c1, file_path)
 
 print('Done writing result to CSV.')
 
