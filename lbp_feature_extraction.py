@@ -87,8 +87,6 @@ def create_feature_matrix_train(train_directory, lbp_extractor):
         for file in training_filelist:
             file_path = sub_directory + '\\' + file
 
-
-
             if verify_valid_img(file_path):
                 print("Processing: "+file_path)
 
@@ -127,8 +125,6 @@ def create_feature_matrix_test(test_directory, lbp_extractor):
     # Iterate over all the files in the class folder
     for file in test_filelist:
         file_path = test_directory + '\\' + file
-
-        image = open_img(file_path)
 
         if verify_valid_img(file_path):
 
