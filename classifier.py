@@ -20,11 +20,11 @@ def convert_to_binary_output(predicted):
     predicted_binary = []
 
     for predicted_class in predicted:
-        if(predicted_class == 'c1'):
+        if(predicted_class == 'COVID'):
             predicted_binary.append(1)
-        elif(predicted_class == 'c2'):
+        elif(predicted_class == 'NAO COVID'):
             predicted_binary.append(0)
-        elif(predicted_class == 'c3'):
+        elif(predicted_class == 'NORMAIS'):
             predicted_binary.append(0)
 
     return predicted_binary
@@ -54,7 +54,7 @@ def count_per_class(output_data):
 train_data = 'Feature Matrix Train\\feature_matrix_train.csv'
 test_data = 'Feature Matrix Test\\feature_matrix_test.csv'
 classifier = 'rf'
-resample = False
+resample = True
 
 # Load data
 train_data_frame = pd.read_csv(train_data)
