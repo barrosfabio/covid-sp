@@ -155,8 +155,8 @@ def create_feature_matrix_test(test_directory, lbp_extractor):
 
 
 # Setting up the train and test directories
-train_directory = 'D:\COVID_SP\Train'
-test_directory = 'D:\COVID_SP\Test'
+train_directory = 'T:\Projetos_Documentos\GitHub\covid-sp\Train'
+test_directory = 'T:\Projetos_Documentos\GitHub\covid-sp\Test'
 lbp_extractor = 'nri_uniform'
 
 # Setting up the resulting matrices directories
