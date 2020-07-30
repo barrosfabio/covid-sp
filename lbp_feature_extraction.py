@@ -8,6 +8,16 @@ import imghdr
 UNIFORM_FEATURE_NUMBER = 10
 NRI_UNIFORM_FEATURE_NUMBER = 59
 
+# Setting up the train and test directories
+train_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Train'
+test_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Test'
+lbp_extractor = 'nri_uniform'
+
+# Setting up the resulting matrices directories
+feature_matrix_train_path = 'Feature Matrix Train'
+feature_matrix_test_path = 'Feature Matrix Test'
+
+
 class LocalBinaryPatterns:
     def __init__(self, numPoints, radius):
         self.numPoints = numPoints
@@ -15,11 +25,8 @@ class LocalBinaryPatterns:
 
     # LBP Feature Extractor from Rodolfo
     def describe_lbp_method_rd(self, image, eps=1e-7):
-        lbp = local_binary_pattern(image, self.numPoints,
-                                           self.radius, method="uniform")
-        (hist, _) = np.histogram(lbp.ravel(),
-                                 bins=np.arange(0, self.numPoints + 3),
-                                 range=(0, self.numPoints + 2))
+        lbp = local_binary_pattern(image, self.numPoints, self.radius, method="uniform")
+        (hist, _) = np.histogram(lbp.ravel(), bins=np.arange(0, self.numPoints + 3), range=(0, self.numPoints + 2))
 
         hist = hist.astype("float")
         hist /= (hist.sum() + eps)
@@ -33,31 +40,34 @@ class LocalBinaryPatterns:
 
         return hist0
 
+
 # Function to load an image from a path
 def open_img(filename):
     img = Image.open(filename)
     return img
 
+
 # Verify if a given image is using a valid format
 def verify_valid_img(path):
-    possible_formats = ['png','jpg','jpeg','tiff','bmp','gif']
+    possible_formats = ['png', 'jpg', 'jpeg', 'tiff', 'bmp', 'gif']
     if imghdr.what(path) in possible_formats:
         return True
     else:
         return False
+
 
 # Feature extraction call
 def feature_extraction(image, lbp_extractor):
     lbp = LocalBinaryPatterns(8, 2)
     image_matrix = np.array(image.convert('L'))
 
-    if(lbp_extractor == 'uniform'):
+    if lbp_extractor == 'uniform':
         img_features = lbp.describe_lbp_method_rd(image_matrix)
-    elif(lbp_extractor == 'nri_uniform'):
+    elif lbp_extractor == 'nri_uniform':
         img_features = lbp.describe_lbp_method_ag(image_matrix)
 
-
     return img_features.tolist()
+
 
 def create_columns(column_number, property):
     columns = []
@@ -66,6 +76,7 @@ def create_columns(column_number, property):
 
     columns.append(property)
     return columns
+
 
 # Function to create the training feature matrix, it has the expected class for each sample
 def create_feature_matrix_train(train_directory, lbp_extractor):
@@ -78,17 +89,18 @@ def create_feature_matrix_train(train_directory, lbp_extractor):
     for dir in os.listdir(train_directory):
 
         # This is the path to each subdirectory
-        sub_directory = train_directory + '\\' + dir
+        sub_directory = train_directory + '/' + dir
 
         # Retrieve the files for the given subdirectory
         training_filelist = os.listdir(sub_directory)
 
         # Iterate over all the files in the class folder
         for file in training_filelist:
-            file_path = sub_directory + '\\' + file
+            file_path = sub_directory + '/' + file
 
             if verify_valid_img(file_path):
-                print("Processing: "+file_path)
+                _fileNumber = str(training_filelist.index(file) + 1) + " from " + str(len(training_filelist))
+                print("Processing: " + _fileNumber + " -- PATH: " + file_path)
 
                 image = open_img(file_path)
                 img_features = feature_extraction(image, lbp_extractor)
@@ -98,19 +110,21 @@ def create_feature_matrix_train(train_directory, lbp_extractor):
 
                 rows_list.append(img_features)
             else:
-                print("The following file is not a valid image: "+file_path)
+                print("The following file is not a valid image: " + file_path)
 
+        print("-"*100)
     # Creating a dataframe to store all the features
     if lbp_extractor == 'uniform':
-        columns = create_columns(UNIFORM_FEATURE_NUMBER,'class')
+        columns = create_columns(UNIFORM_FEATURE_NUMBER, 'class')
     elif lbp_extractor == 'nri_uniform':
-        columns = create_columns(NRI_UNIFORM_FEATURE_NUMBER,'class')
+        columns = create_columns(NRI_UNIFORM_FEATURE_NUMBER, 'class')
 
     feature_matrix = pd.DataFrame(rows_list, columns=columns)
 
     print("Finished creating Training Feature Matrix")
 
     return feature_matrix
+
 
 # Function to create the testing feature matrix, it has the id of each sample instead of the class
 def create_feature_matrix_test(test_directory, lbp_extractor):
@@ -124,11 +138,11 @@ def create_feature_matrix_test(test_directory, lbp_extractor):
 
     # Iterate over all the files in the class folder
     for file in test_filelist:
-        file_path = test_directory + '\\' + file
+        file_path = test_directory + '/' + file
 
         if verify_valid_img(file_path):
-
-            print("Processing: " + file_path)
+            _fileNumber = str(test_filelist.index(file)+1) + " from " + str(len(test_filelist))
+            print("Processing: " + _fileNumber + " -- PATH: " + file_path)
 
             image = open_img(file_path)
             img_features = feature_extraction(image, lbp_extractor)
@@ -140,12 +154,13 @@ def create_feature_matrix_test(test_directory, lbp_extractor):
         else:
             print("The following file is not a valid image: " + file_path)
 
+    print("-" * 100)
 
     # Creating a dataframe to store all the features
     if lbp_extractor == 'uniform':
-        columns = create_columns(UNIFORM_FEATURE_NUMBER,'id_exame')
+        columns = create_columns(UNIFORM_FEATURE_NUMBER, 'id_exame')
     elif lbp_extractor == 'nri_uniform':
-        columns = create_columns(NRI_UNIFORM_FEATURE_NUMBER,'id_exame')
+        columns = create_columns(NRI_UNIFORM_FEATURE_NUMBER, 'id_exame')
 
     feature_matrix = pd.DataFrame(rows_list, columns=columns)
 
@@ -154,33 +169,17 @@ def create_feature_matrix_test(test_directory, lbp_extractor):
     return feature_matrix
 
 
-# Setting up the train and test directories
-train_directory = 'D:\COVID_SP\Train'
-test_directory = 'D:\COVID_SP\Test'
-lbp_extractor = 'nri_uniform'
-
-# Setting up the resulting matrices directories
-feature_matrix_train_path = 'Feature Matrix Train'
-feature_matrix_test_path = 'Feature Matrix Test'
-
 if not os.path.isdir(feature_matrix_train_path):
-    print('Creating Directory: '+feature_matrix_train_path)
+    print('Creating Directory: ' + feature_matrix_train_path)
     os.mkdir(feature_matrix_train_path)
 
 if not os.path.isdir(feature_matrix_test_path):
-    print('Creating Directory: '+feature_matrix_test_path)
+    print('Creating Directory: ' + feature_matrix_test_path)
     os.mkdir(feature_matrix_test_path)
 
 feature_matrix_train = create_feature_matrix_train(train_directory, lbp_extractor)
 print("Saving Training Feature Matrix to CSV")
-feature_matrix_train.to_csv(feature_matrix_train_path + '\\feature_matrix_train.csv', index=False)
+feature_matrix_train.to_csv(feature_matrix_train_path + '/feature_matrix_train.csv', index=False)
 feature_matrix_test = create_feature_matrix_test(test_directory, lbp_extractor)
 print("Saving Test Feature Matrix to CSV")
-feature_matrix_test.to_csv(feature_matrix_test_path + '\\feature_matrix_test.csv', index=False)
-
-
-
-
-
-
-
+feature_matrix_test.to_csv(feature_matrix_test_path + '/feature_matrix_test.csv', index=False)
