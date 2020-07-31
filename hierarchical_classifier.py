@@ -4,6 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.base import clone
+import numpy as np
 
 POSITIVE_CLASS = 'COVID'
 NEGATIVE_CLASS_1 = 'NORMAIS'
@@ -119,8 +120,15 @@ def prediction_proba(data, model):
     data = data.reshape(1, -1)
     predicted = model.predict(data)
     proba = model.predict_proba(data)
+    proba = proba[0]
 
-    result = Result(predicted, proba)
+    possible_classes = model.classes_
+    # Find index of predicted class and save this index only
+    index = np.where(possible_classes == predicted)
+    index = index[0]
+
+    proba_predicted_class = proba[index[0]]
+    result = Result(predicted, proba_predicted_class)
     return result
 
 
@@ -135,7 +143,7 @@ def predict_lcpn(row, tree):
         elif result.predicted_class[0] == tree.right.class_name:
             prediction_result = predict_lcpn(row, tree.right)
 
-        # If proba is none, than, it's the level before the leaf, we should return the value obtained for the current level
+        # If proba is None, that means the last prediction was a leaf node, as we want
         if(prediction_result.proba is None):
             prediction_result.set_proba(result.proba)
 
