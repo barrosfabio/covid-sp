@@ -9,8 +9,8 @@ UNIFORM_FEATURE_NUMBER = 10
 NRI_UNIFORM_FEATURE_NUMBER = 59
 
 # Setting up the train and test directories
-train_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Train'
-test_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Test'
+train_directory = 'C:/Users/Fabio Barros/Git/covid-sp/Train'
+test_directory = 'C:/Users/Fabio Barros/Git/covid-sp/Test'
 lbp_extractor = 'nri_uniform'
 
 # Setting up the resulting matrices directories

@@ -4,8 +4,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 import csv
 import os
-from imblearn.over_sampling import SMOTE
+from imblearn.combine import SMOTETomek
 import numpy as np
+
 
 POSITIVE_CLASS = 'COVID'
 NEGATIVE_CLASS_1 = 'NORMAIS'
@@ -14,10 +15,10 @@ NEGATIVE_CLASS_2 = 'notCOVID'
 # Options
 CSV_SPACER = ";"
 
-train_data_path = 'T:/0 - PUCPR/Mestrado/0 - COVID/TestandoWeka/covid_train.csv'
-test_data_path = 'T:/0 - PUCPR/Mestrado/0 - COVID/TestandoWeka/covid_test.csv'
+train_data_path = 'C:/Users/Fabio Barros/Git/covid-sp/covid_train_59/covid_sp_train_59.csv'
+test_data_path = 'C:/Users/Fabio Barros/Git/covid-sp/covid_test_59/covid_sp_test_59.csv'
 classifier = "rf" #rf, mlp or svm
-resample = False
+resample = True
 
 
 # Slice inputs and outputs
@@ -75,8 +76,8 @@ def count_per_class(output_data):
 
 def define_classifier():
     if classifier == 'rf':
-        return RandomForestClassifier(criterion="gini", min_samples_leaf=10, min_samples_split=20, max_leaf_nodes=None,
-                                      max_depth=10)
+        return RandomForestClassifier(criterion="gini", n_estimators=150)
+
     elif classifier == 'mlp':
         return MLPClassifier(hidden_layer_sizes=(60), activation='logistic', verbose=False, early_stopping=True,
                              validation_fraction=0.2)
@@ -99,8 +100,8 @@ clf = define_classifier()
 count_per_class(output_data_train)
 
 # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-if resample:
-    resampler = SMOTE(sampling_strategy='auto', random_state=42, k_neighbors=5, n_jobs=4)
+if resample == True:
+    resampler = SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
     print("Resampling data")
     [input_data_train, output_data_train] = resampler.fit_resample(input_data_train, output_data_train)  # Original class distribution
     print("Done resampling")

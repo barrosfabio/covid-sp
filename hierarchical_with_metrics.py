@@ -7,7 +7,14 @@ from sklearn.base import clone
 import numpy as np
 import csv
 import os
-from imblearn.combine import SMOTETomek
+from sklearn.model_selection import KFold
+from sklearn.metrics import accuracy_score
+from imblearn.over_sampling import SMOTE
+from matplotlib import pyplot as plt
+import itertools
+from sklearn.metrics import confusion_matrix
+from imblearn.over_sampling import SMOTE, RandomOverSampler
+from imblearn.combine import SMOTEENN, SMOTETomek
 
 POSITIVE_CLASS = 'COVID'
 NEGATIVE_CLASS_1 = 'NORMAIS'
@@ -17,11 +24,11 @@ INTERMEDIATE_NEGATIVE_CLASS = 'NOT_NORMAL'
 # Options
 CSV_SPACER = ";"
 
-train_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train\\covid_train.csv'
-test_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_test\\covid_test.csv'
+data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train_59\\covid_sp_train_59.csv'
 classifier = "rf" #rf, mlp or svm
 resample = True
 local_resample = False
+resample_algorithm = 'smote-tomek'
 result_dir = 'Result_Hierarchical'
 
 class Node:
@@ -98,6 +105,7 @@ def retrieve_data_lcpn(tree, data_frame):
     else:
         class_data = class_data.append(retrieve_data_lcpn(tree.left, data_frame))
         class_data = class_data.append(retrieve_data_lcpn(tree.right, data_frame))
+
         if local_resample == True:
             print('------------Local Distribution for class: {}----------------'.format(tree.class_name))
             [input_data, output_data] = slice_data(class_data)
@@ -107,7 +115,6 @@ def retrieve_data_lcpn(tree, data_frame):
         tree.data = class_data
 
         # Rename to the current class before returning to parent class
-
         class_data_relabeled = relabel_to_current_class(tree.class_name, class_data.copy())
 
         return class_data_relabeled
@@ -120,7 +127,6 @@ def train_lcpn(tree):
         [input_data_train, output_data_train] = slice_data(tree.data)
 
         clf = clone(define_classifier())
-        print('Training classifier for node: '+tree.class_name)
         trained_clf = clf.fit(input_data_train, output_data_train)
         tree.local_clf = trained_clf
 
@@ -191,7 +197,7 @@ def write_csv(sample_ids, predicted, probability_array, file_path):
         filewriter.writerow(header)
 
         for i in range(0, len(predicted)):
-            # print("CLASSE PREVISTA -- " + str(predicted[i]))
+
             if predicted[i] == 1:
                 result_row = [sample_ids[i], predicted[i], probability_array[i]]
             else:
@@ -208,14 +214,70 @@ def count_per_class(output_data):
         print('Class {}, Count {}'.format(classes[i], count[i]))
     print('')
 
+def define_classifier():
+    if classifier == 'rf':
+        return RandomForestClassifier(criterion="gini", min_samples_leaf=10, min_samples_split=20, max_leaf_nodes=None,
+                                      max_depth=10)
+    elif classifier == 'mlp':
+        return MLPClassifier(hidden_layer_sizes=(60), activation='logistic', verbose=False, early_stopping=True,
+                             validation_fraction=0.2)
+    elif classifier == 'svm':
+        return SVC(gamma='auto', probability=True)
+
+
+def define_resampler():
+    if resample_algorithm == 'smote':
+        return SMOTE(sampling_strategy='auto', random_state=42, k_neighbors=5, n_jobs=4)
+
+    elif resample_algorithm == 'smote-enn':
+        return SMOTEENN(sampling_strategy='auto', random_state=42, n_jobs=4)
+
+    elif resample_algorithm == 'smote-tomek':
+        return SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
+
+    elif resample_algorithm == 'random':
+        return RandomOverSampler(sampling_strategy='auto', random_state=4)
+
+def plot_confusion_matrix(cm, classes, image_name,
+                          normalize=True,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.figure(figsize=(20, 20))
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=90)
+    plt.yticks(tick_marks, classes)
+
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.savefig(image_name)
+    #plt.show(block=False)
+    plt.close()
+
 def resample_data(input_data_train, output_data_train):
 
     # Original class distribution
-    print('Original Class Distribution')
     count_per_class(output_data_train)
 
     # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-    resampler = SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
+    resampler = define_resampler()
     print("Resampling data")
     [input_data_train, output_data_train] = resampler.fit_resample(input_data_train,
                                                                    output_data_train)  # Original class distribution
@@ -228,55 +290,83 @@ def resample_data(input_data_train, output_data_train):
 
     return train_data_frame
 
+def define_resampler():
+    if resample_algorithm == 'smote':
+        return SMOTE(sampling_strategy='auto', random_state=42, k_neighbors=5, n_jobs=4)
+
+    elif resample_algorithm == 'smote-enn':
+        return SMOTEENN(sampling_strategy='auto', random_state=42, n_jobs=4)
+
+    elif resample_algorithm == 'smote-tomek':
+        return SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
+
+    elif resample_algorithm == 'random':
+        return RandomOverSampler(sampling_strategy='auto', random_state=4)
 
 # Load data
-train_data_frame = pd.read_csv(train_data)
-test_data_frame = pd.read_csv(test_data)
+data_frame = pd.read_csv(data)
+[input_data, output_data] = slice_data(data_frame)
+accuracy_array = []
 
-# Load Classifier
-clf = define_classifier()
+kfold = KFold(n_splits=5, shuffle=True)
+kfold_count = 1
 
-class_tree = create_class_tree()
+for train_index, test_index in kfold.split(input_data, output_data):
+    print('----------Started fold {} ----------'.format(kfold_count))
+    # Slice inputs and outputs
+    input_data_train, output_data_train = input_data[train_index], output_data[train_index]
 
-# If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-if resample == True:
-    [input_data_train, output_data_train] = slice_data(train_data_frame)
-    train_data_frame = resample_data(input_data_train, output_data_train)
-    train_data_frame = pd.DataFrame(input_data_train)
-    train_data_frame['class'] = output_data_train
+    # Original class distribution
+    count_per_class(output_data_train)
 
-retrieve_data_lcpn(class_tree, train_data_frame)
+    # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
+    if resample_data == True:
+        train_data_frame = resample_data(input_data_train, output_data_train)
+    else:
+        train_data_frame = pd.DataFrame(input_data_train)
+        train_data_frame['class'] = output_data_train
 
-# Train
-print('Started training...')
-train_lcpn(class_tree)
+    test_data_frame, outputs_data_test = input_data[test_index], output_data[test_index]
 
-# Predict
-[input_data_test, sample_ids] = slice_data(test_data_frame)
+    # Load Classifier
+    clf = define_classifier()
 
-prediction = []
-proba_array = []
+    class_tree = create_class_tree()
+    retrieve_data_lcpn(class_tree, train_data_frame)
 
-print('Started prediction...')
-# Predict the class for each row
-for input_test_row in input_data_test:
-    prediction_result = predict_lcpn(input_test_row, class_tree)
-    prediction.append(prediction_result.predicted_class)
-    proba_array.append(prediction_result.proba)
+    # Train
+    train_lcpn(class_tree)
+
+    # Predict
+    prediction = []
+    proba_array = []
+
+    # Predict the class for each row
+    for input_test_row in test_data_frame:
+        prediction_result = predict_lcpn(input_test_row, class_tree)
+        prediction.append(prediction_result.predicted_class)
+        proba_array.append(prediction_result.proba)
+
+    # Calculating Metrics
+    print('--------Results for fold {} ----------'.format(kfold_count))
+    accuracy = accuracy_score(outputs_data_test, prediction)
+    accuracy_array.append(accuracy)
+    print('Accuracy Score: ' + str(accuracy))
+    print('Finished Fold {}'.format(kfold_count))
+    print('--------------------------------------\n')
+
+    conf_matrix = confusion_matrix(outputs_data_test, prediction)
+    conf_matrix_labels = np.unique(outputs_data_test)
+    plot_confusion_matrix(conf_matrix, classes=conf_matrix_labels, image_name='Conf_Matrix_Hierarchical_'+str(kfold_count),
+                          normalize=True,
+                          title='Confusion Matrix')
+
+    kfold_count += 1
+
+print('--------------Average results--------------')
+print('Average Accuracy: {}'.format(np.mean(accuracy_array)))
 
 
-# Convert to binary output
-predicted = convert_to_binary_output(prediction)
 
-if not os.path.isdir(result_dir):
-    os.mkdir(result_dir)
-
-file_path = result_dir + '\\result_hierarchical_' + classifier + '_resample_' + str(resample) + '.csv'
-
-print('Writing result to csv')
-# Save result in csv
-write_csv(sample_ids, predicted, proba_array, file_path)
-
-print("Finished")
 
 
