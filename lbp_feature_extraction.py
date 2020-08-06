@@ -13,10 +13,6 @@ train_directory = 'C:/Users/Fabio Barros/Git/covid-sp/Train'
 test_directory = 'C:/Users/Fabio Barros/Git/covid-sp/Test'
 lbp_extractor = 'nri_uniform'
 
-# Setting up the resulting matrices directories
-feature_matrix_train_path = 'Feature Matrix Train'
-feature_matrix_test_path = 'Feature Matrix Test'
-
 
 class LocalBinaryPatterns:
     def __init__(self, numPoints, radius):
@@ -36,7 +32,7 @@ class LocalBinaryPatterns:
     # LBP Feature Extractor from Aguiar
     def describe_lbp_method_ag(self, image):
         lbpU = local_binary_pattern(image, self.numPoints, self.radius, method='nri_uniform')
-        hist0, nbins0 = np.histogram(np.uint8(lbpU), bins=range(60), normed=True)
+        hist0, nbins0 = np.histogram(np.uint8(lbpU), bins=range(60), density=True)
 
         return hist0
 
@@ -168,18 +164,18 @@ def create_feature_matrix_test(test_directory, lbp_extractor):
 
     return feature_matrix
 
+#It will save both files in the current working directory
+feature_matrix_train_path = os.getcwd()
+feature_matrix_test_path = os.getcwd()
 
-if not os.path.isdir(feature_matrix_train_path):
-    print('Creating Directory: ' + feature_matrix_train_path)
-    os.mkdir(feature_matrix_train_path)
+#feature_matrix_train = create_feature_matrix_train(train_directory, lbp_extractor)
+#print("Saving Training Feature Matrix to CSV")
+#print("Saving Train Feature Matrix to "+feature_matrix_train_path)
+#feature_matrix_train.to_csv(feature_matrix_train_path + '/feature_matrix_train.csv', index=False)
+#print("Saving Train Feature Matrix to CSV Completed.")
 
-if not os.path.isdir(feature_matrix_test_path):
-    print('Creating Directory: ' + feature_matrix_test_path)
-    os.mkdir(feature_matrix_test_path)
-
-feature_matrix_train = create_feature_matrix_train(train_directory, lbp_extractor)
-print("Saving Training Feature Matrix to CSV")
-feature_matrix_train.to_csv(feature_matrix_train_path + '/feature_matrix_train.csv', index=False)
 feature_matrix_test = create_feature_matrix_test(test_directory, lbp_extractor)
 print("Saving Test Feature Matrix to CSV")
+print("Saving Test Feature Matrix to "+feature_matrix_test_path)
 feature_matrix_test.to_csv(feature_matrix_test_path + '/feature_matrix_test.csv', index=False)
+print("Saving Test Feature Matrix to CSV Completed.")
