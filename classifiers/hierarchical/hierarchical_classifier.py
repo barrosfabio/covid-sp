@@ -17,12 +17,14 @@ INTERMEDIATE_NEGATIVE_CLASS = 'NOT_NORMAL'
 # Options
 CSV_SPACER = ";"
 
-train_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train_59\\covid_sp_train_59.csv'
-test_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_test_fase3\\covid_sp_test_59_fase3.csv'
+#train_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train_59\\covid_sp_train_59.csv'
+#test_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_test_fase3\\covid_sp_test_59_fase3.csv'
+train_data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydls_covid_train_59_fase2/rydls_covid_19_fase2_train.csv'
+test_data = 'C:/Users/Fabio Barros/Git/covid-sp/data/covid_test_59_fase3/covid_sp_test_59_fase3.csv'
 classifier = "rf" #rf, mlp or svm
 resample = True
 local_resample = False
-result_dir = '../../Result_Hierarchical'
+result_dir = 'Result_Hierarchical'
 
 class Node:
     class_name = None

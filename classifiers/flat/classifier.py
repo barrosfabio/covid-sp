@@ -15,10 +15,11 @@ NEGATIVE_CLASS_2 = 'notCOVID'
 # Options
 CSV_SPACER = ";"
 
-train_data_path = 'C:/Users/Fabio Barros/Git/covid-sp/covid_train_59/covid_sp_train_59.csv'
-test_data_path = 'C:/Users/Fabio Barros/Git/covid-sp/covid_test_59/covid_sp_test_59.csv'
+train_data_path = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydls_covid_train_59_fase2/rydls_covid_19_fase2_train.csv'
+test_data_path = 'C:/Users/Fabio Barros/Git/covid-sp/data/covid_test_59_fase3/covid_sp_test_59_fase3.csv'
 classifier = "rf" #rf, mlp or svm
 resample = True
+result_dir = 'Result_Flat'
 
 
 # Slice inputs and outputs
@@ -125,7 +126,7 @@ probability_c1 = proba[:, 0]
 # Convert to binary output
 predicted = convert_to_binary_output(predicted)
 
-result_dir = 'Result'
+
 if not os.path.isdir(result_dir):
     os.mkdir(result_dir)
 
