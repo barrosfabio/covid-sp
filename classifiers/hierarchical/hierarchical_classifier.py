@@ -17,12 +17,12 @@ INTERMEDIATE_NEGATIVE_CLASS = 'NOT_NORMAL'
 # Options
 CSV_SPACER = ";"
 
-train_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train\\covid_train.csv'
-test_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_test\\covid_test.csv'
+train_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train_59\\covid_sp_train_59.csv'
+test_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_test_fase3\\covid_sp_test_59_fase3.csv'
 classifier = "rf" #rf, mlp or svm
 resample = True
 local_resample = False
-result_dir = 'Result_Hierarchical'
+result_dir = '../../Result_Hierarchical'
 
 class Node:
     class_name = None
@@ -183,7 +183,7 @@ def convert_to_binary_output(predicted):
 
 # Write result to formatted csv
 def write_csv(sample_ids, predicted, probability_array, file_path):
-    header = ['id_exame', 'class', 'prob']
+    header = ['id_exame', 'covid', 'prob']
 
     with open(file_path, 'w', newline='') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=CSV_SPACER, quotechar='|', quoting=csv.QUOTE_MINIMAL,

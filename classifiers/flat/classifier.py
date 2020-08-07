@@ -47,7 +47,7 @@ def convert_to_binary_output(predicted):
 
 # Write result to formatted csv
 def write_csv(sample_ids, predicted, probability_array, file_path):
-    header = ['id_exame', 'class', 'prob']
+    header = ['id_exame', 'covid', 'prob']
 
     with open(file_path, 'w', newline='') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=CSV_SPACER, quotechar='|', quoting=csv.QUOTE_MINIMAL,

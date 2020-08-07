@@ -168,11 +168,11 @@ def create_feature_matrix_test(test_directory, lbp_extractor):
 feature_matrix_train_path = os.getcwd()
 feature_matrix_test_path = os.getcwd()
 
-#feature_matrix_train = create_feature_matrix_train(train_directory, lbp_extractor)
-#print("Saving Training Feature Matrix to CSV")
-#print("Saving Train Feature Matrix to "+feature_matrix_train_path)
-#feature_matrix_train.to_csv(feature_matrix_train_path + '/feature_matrix_train.csv', index=False)
-#print("Saving Train Feature Matrix to CSV Completed.")
+feature_matrix_train = create_feature_matrix_train(train_directory, lbp_extractor)
+print("Saving Training Feature Matrix to CSV")
+print("Saving Train Feature Matrix to "+feature_matrix_train_path)
+feature_matrix_train.to_csv(feature_matrix_train_path + '/feature_matrix_train.csv', index=False)
+print("Saving Train Feature Matrix to CSV Completed.")
 
 feature_matrix_test = create_feature_matrix_test(test_directory, lbp_extractor)
 print("Saving Test Feature Matrix to CSV")

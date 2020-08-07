@@ -29,7 +29,7 @@ classifier = "rf" #rf, mlp or svm
 resample = True
 local_resample = False
 resample_algorithm = 'smote-tomek'
-result_dir = 'Result_Hierarchical'
+result_dir = '../../Result_Hierarchical'
 
 class Node:
     class_name = None
