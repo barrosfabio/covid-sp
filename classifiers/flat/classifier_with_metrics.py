@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 import itertools
 from sklearn.metrics import confusion_matrix
-from imblearn.over_sampling import SMOTE, RandomOverSampler
+from imblearn.over_sampling import SMOTE, RandomOverSampler, ADASYN, BorderlineSMOTE
 from imblearn.combine import SMOTEENN, SMOTETomek
 from sklearn.ensemble import BaggingClassifier
 
@@ -20,12 +20,13 @@ NEGATIVE_CLASS_1 = 'NORMAIS'
 NEGATIVE_CLASS_2 = 'notCOVID'
 
 # Options
-data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydls_covid_train_59_fase2/rydls_covid_19_fase2_train.csv'
+data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase2/rydles_covid_19_fase2_train.csv'
 
 classifier = 'rf'
 resample = True
-resample_algorithm = 'smote-enn'
+resample_algorithm = 'ros'
 accuracy_array = []
+accuracy_covid_array = []
 
 # Slice inputs and outputs
 def slice_data(dataset):
@@ -88,21 +89,22 @@ def define_classifier():
         return search
     elif classifier == 'bagging_rf':
 
-        return BaggingClassifier(base_estimator=RandomForestClassifier(n_estimators=100), n_estimators = 100, random_state = 42, warm_start=True)
+        return BaggingClassifier(base_estimator=RandomForestClassifier(n_estimators=100), n_estimators = 100, random_state = 42)
 
 
-def define_resampler():
-    if resample_algorithm == 'smote':
-        return SMOTE(sampling_strategy='auto', random_state=42, k_neighbors=5, n_jobs=4)
-
-    elif resample_algorithm == 'smote-enn':
+def define_resampler(resampler_option):
+    if(resampler_option == 'smote'):
+        return SMOTE(sampling_strategy='auto', k_neighbors=5, random_state=42, n_jobs=4)
+    elif(resampler_option == 'smote-enn'):
         return SMOTEENN(sampling_strategy='auto', random_state=42, n_jobs=4)
-
-    elif resample_algorithm == 'smote-tomek':
+    elif(resampler_option == 'smote-tomek'):
         return SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
-
-    elif resample_algorithm == 'random':
-        return RandomOverSampler(sampling_strategy='auto', random_state=4)
+    elif(resampler_option == 'borderline-smote'):
+        return BorderlineSMOTE(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'adasyn'):
+        return ADASYN(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'ros'):
+        return RandomOverSampler(sampling_strategy='auto', random_state=42)
 
 def plot_confusion_matrix(cm, classes, image_name,
                           normalize=True,
@@ -137,7 +139,18 @@ def plot_confusion_matrix(cm, classes, image_name,
     #plt.show(block=False)
     plt.close()
 
+def calculate_accuracy(output_array, predicted_array):
+    accuracy = accuracy_score(output_array, predicted_array)
+    accuracy_array.append(accuracy)
+    print('Accuracy Score: ' + str(accuracy))
 
+    expected_covid = np.where(output_array == 'COVID')
+    idx_covid = (expected_covid[0].tolist())
+    filtered_output_array = output_array[idx_covid]
+    filtered_predicted_array = predicted_array[idx_covid]
+    covid_accuracy = accuracy_score(filtered_output_array,filtered_predicted_array)
+    accuracy_covid_array.append(covid_accuracy)
+    print('Accuracy Score for COVID class: ' + str(covid_accuracy))
 
 # Load data
 data_frame = pd.read_csv(data)
@@ -161,8 +174,8 @@ for train_index, test_index in kfold.split(input_data, output_data):
     count_per_class(outputs_train)
 
     # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-    if resample:
-        resampler = define_resampler()
+    if resample == True:
+        resampler = define_resampler(resample_algorithm)
         print("Resampling data")
         [input_data_train, output_data_train] = resampler.fit_resample(inputs_train, outputs_train)# Original class distribution
         print("Done resampling")
@@ -179,13 +192,9 @@ for train_index, test_index in kfold.split(input_data, output_data):
     predicted = clf.predict(inputs_test)
     print("Finished prediction")
 
-
     print('--------Results for fold {} ----------'.format(kfold_count))
-    #print(classification_report(outputs_test, predicted, labels=np.unique(outputs_test)))
-    accuracy = accuracy_score(outputs_test, predicted)
-    print('Accuracy Score: ' + str(accuracy))
-    accuracy_array.append(accuracy)
-    print('--------Finished fold {} ----------'.format(kfold_count))
+    calculate_accuracy(outputs_test, predicted)
+    print('--------Finished fold {} ----------\n\n'.format(kfold_count))
 
     conf_matrix = confusion_matrix(outputs_test, predicted)
     conf_matrix_labels = np.unique(outputs_test)
@@ -195,7 +204,8 @@ for train_index, test_index in kfold.split(input_data, output_data):
 
     kfold_count+=1
 
-print('--------Average result ----------'.format(kfold_count))
+print('\n--------Average result ----------')
 print('Avg Accuracy: {}'.format(np.mean(accuracy_array)*100))
+print('Avg Accuracy for COVID class: {}'.format(np.mean(accuracy_covid_array)*100))
 
 

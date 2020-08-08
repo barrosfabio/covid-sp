@@ -6,14 +6,12 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.base import clone
 import numpy as np
 import csv
-import os
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
-from imblearn.over_sampling import SMOTE
 from matplotlib import pyplot as plt
 import itertools
 from sklearn.metrics import confusion_matrix
-from imblearn.over_sampling import SMOTE, RandomOverSampler
+from imblearn.over_sampling import SMOTE, RandomOverSampler, BorderlineSMOTE, ADASYN
 from imblearn.combine import SMOTEENN, SMOTETomek
 
 POSITIVE_CLASS = 'COVID'
@@ -24,12 +22,14 @@ INTERMEDIATE_NEGATIVE_CLASS = 'NOT_NORMAL'
 # Options
 CSV_SPACER = ";"
 
-data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydls_covid_train_59_fase2/rydls_covid_19_fase2_train.csv'
+data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase2/rydles_covid_19_fase2_train.csv'
 classifier = "rf" #rf, mlp or svm
 resample = False
 local_resample = False
-resample_algorithm = 'smote-tomek'
+resampler_option = 'ros'
 result_dir = '../../Result_Hierarchical'
+accuracy_array = []
+accuracy_covid_array = []
 
 class Node:
     class_name = None
@@ -224,19 +224,19 @@ def define_classifier():
     elif classifier == 'svm':
         return SVC(gamma='auto', probability=True)
 
-
-def define_resampler():
-    if resample_algorithm == 'smote':
-        return SMOTE(sampling_strategy='auto', random_state=42, k_neighbors=5, n_jobs=4)
-
-    elif resample_algorithm == 'smote-enn':
+def define_resampler(resampler_option):
+    if(resampler_option == 'smote'):
+        return SMOTE(sampling_strategy='auto', k_neighbors=5, random_state=42, n_jobs=4)
+    elif(resampler_option == 'smote-enn'):
         return SMOTEENN(sampling_strategy='auto', random_state=42, n_jobs=4)
-
-    elif resample_algorithm == 'smote-tomek':
+    elif(resampler_option == 'smote-tomek'):
         return SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
-
-    elif resample_algorithm == 'random':
-        return RandomOverSampler(sampling_strategy='auto', random_state=4)
+    elif(resampler_option == 'borderline-smote'):
+        return BorderlineSMOTE(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'adasyn'):
+        return ADASYN(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'ros'):
+        return RandomOverSampler(sampling_strategy='auto', random_state=42)
 
 def plot_confusion_matrix(cm, classes, image_name,
                           normalize=True,
@@ -277,7 +277,7 @@ def resample_data(input_data_train, output_data_train):
     count_per_class(output_data_train)
 
     # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-    resampler = define_resampler()
+    resampler = define_resampler(resampler_option)
     print("Resampling data")
     [input_data_train, output_data_train] = resampler.fit_resample(input_data_train,
                                                                    output_data_train)  # Original class distribution
@@ -290,23 +290,23 @@ def resample_data(input_data_train, output_data_train):
 
     return train_data_frame
 
-def define_resampler():
-    if resample_algorithm == 'smote':
-        return SMOTE(sampling_strategy='auto', random_state=42, k_neighbors=5, n_jobs=4)
+def calculate_accuracy(output_array, predicted_array):
+    accuracy = accuracy_score(output_array, predicted_array)
+    accuracy_array.append(accuracy)
+    print('Accuracy Score: ' + str(accuracy))
 
-    elif resample_algorithm == 'smote-enn':
-        return SMOTEENN(sampling_strategy='auto', random_state=42, n_jobs=4)
-
-    elif resample_algorithm == 'smote-tomek':
-        return SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
-
-    elif resample_algorithm == 'random':
-        return RandomOverSampler(sampling_strategy='auto', random_state=4)
+    expected_covid = np.where(output_array == 'COVID')
+    idx_covid = (expected_covid[0].tolist())
+    filtered_output_array = output_array[idx_covid]
+    filtered_predicted_array = predicted_array[idx_covid]
+    covid_accuracy = accuracy_score(filtered_output_array,filtered_predicted_array)
+    accuracy_covid_array.append(covid_accuracy)
+    print('Accuracy Score for COVID class: ' + str(covid_accuracy))
 
 # Load data
 data_frame = pd.read_csv(data)
 [input_data, output_data] = slice_data(data_frame)
-accuracy_array = []
+
 
 kfold = KFold(n_splits=5, shuffle=True)
 kfold_count = 1
@@ -349,11 +349,8 @@ for train_index, test_index in kfold.split(input_data, output_data):
 
     # Calculating Metrics
     print('--------Results for fold {} ----------'.format(kfold_count))
-    accuracy = accuracy_score(outputs_data_test, prediction)
-    accuracy_array.append(accuracy)
-    print('Accuracy Score: ' + str(accuracy))
-    print('Finished Fold {}'.format(kfold_count))
-    print('--------------------------------------\n')
+    calculate_accuracy(outputs_data_test, np.array(prediction))
+    print('--------Finished fold {} ----------\n\n'.format(kfold_count))
 
     conf_matrix = confusion_matrix(outputs_data_test, prediction)
     conf_matrix_labels = np.unique(outputs_data_test)
@@ -363,9 +360,9 @@ for train_index, test_index in kfold.split(input_data, output_data):
 
     kfold_count += 1
 
-print('--------------Average results--------------')
-print('Average Accuracy: {}'.format(np.mean(accuracy_array)))
-
+print('\n--------Average result ----------')
+print('Avg Accuracy: {}'.format(np.mean(accuracy_array)*100))
+print('Avg Accuracy for COVID class: {}'.format(np.mean(accuracy_covid_array)*100))
 
 
 
