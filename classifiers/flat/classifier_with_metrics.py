@@ -20,7 +20,7 @@ NEGATIVE_CLASS_1 = 'NORMAIS'
 NEGATIVE_CLASS_2 = 'notCOVID'
 
 # Options
-data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train_59\\covid_sp_train_59.csv'
+data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydls_covid_train_59_fase2/rydls_covid_19_fase2_train.csv'
 
 classifier = 'rf'
 resample = True
