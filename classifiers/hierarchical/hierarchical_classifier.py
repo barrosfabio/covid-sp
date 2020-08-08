@@ -7,7 +7,8 @@ from sklearn.base import clone
 import numpy as np
 import csv
 import os
-from imblearn.combine import SMOTETomek
+from imblearn.over_sampling import SMOTE, RandomOverSampler, BorderlineSMOTE, ADASYN
+from imblearn.combine import SMOTEENN, SMOTETomek
 
 POSITIVE_CLASS = 'COVID'
 NEGATIVE_CLASS_1 = 'NORMAIS'
@@ -19,12 +20,13 @@ CSV_SPACER = ";"
 
 #train_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_train_59\\covid_sp_train_59.csv'
 #test_data = 'C:\\Users\\Fabio Barros\\Git\\covid-sp\\covid_test_fase3\\covid_sp_test_59_fase3.csv'
-train_data = 'C:/Users/Fabio Barros/Git/covid-sp/data/covid_train_59_fase2/covid_sp_train_59.csv'
+train_data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase2/rydles_covid_19_fase2_train.csv'
 test_data = 'C:/Users/Fabio Barros/Git/covid-sp/data/covid_test_59_fase3/covid_sp_test_59_fase3.csv'
 classifier = "rf" #rf, mlp or svm
 resample = False
 local_resample = False
 result_dir = 'Result_Hierarchical'
+resampler_option = 'smote-enn'
 
 class Node:
     class_name = None
@@ -95,15 +97,15 @@ def relabel_to_current_class(class_name, relabeled_data_frame):
 
 def retrieve_data_lcpn(tree, data_frame):
     class_data = pd.DataFrame()
-    if tree.is_leaf == True:
+    if tree.is_leaf is True:
         return data_frame[data_frame['class']==tree.class_name]
     else:
         class_data = class_data.append(retrieve_data_lcpn(tree.left, data_frame))
         class_data = class_data.append(retrieve_data_lcpn(tree.right, data_frame))
-        if local_resample == True:
+        if local_resample is True:
             print('------------Local Distribution for class: {}----------------'.format(tree.class_name))
             [input_data, output_data] = slice_data(class_data)
-            class_data = resample_data(input_data, output_data)
+            class_data = resample_data(input_data, output_data, resampler_option)
             print('------------------------------------------------------------')
 
         tree.data = class_data
@@ -115,7 +117,7 @@ def retrieve_data_lcpn(tree, data_frame):
         return class_data_relabeled
 
 def train_lcpn(tree):
-    if tree.is_leaf == True:
+    if tree.is_leaf is True:
         return
     else:
         # Will train only for parent node classes
@@ -210,14 +212,28 @@ def count_per_class(output_data):
         print('Class {}, Count {}'.format(classes[i], count[i]))
     print('')
 
-def resample_data(input_data_train, output_data_train):
+def define_resampler(resampler_option):
+    if(resampler_option == 'smote'):
+        return SMOTE(sampling_strategy='auto', k_neighbors=5, random_state=42, n_jobs=4)
+    elif(resampler_option == 'smote-enn'):
+        return SMOTEENN(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'smote-tomek'):
+        return SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'borderline-smote'):
+        return BorderlineSMOTE(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'adasyn'):
+        return ADASYN(sampling_strategy='auto', random_state=42, n_jobs=4)
+    elif(resampler_option == 'ros'):
+        return RandomOverSampler(sampling_strategy='auto', random_state=42)
+
+def resample_data(input_data_train, output_data_train, resampler_option):
 
     # Original class distribution
     print('Original Class Distribution')
     count_per_class(output_data_train)
 
     # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-    resampler = SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
+    resampler = define_resampler(resampler_option)
     print("Resampling data")
     [input_data_train, output_data_train] = resampler.fit_resample(input_data_train,
                                                                    output_data_train)  # Original class distribution
@@ -241,9 +257,9 @@ clf = define_classifier()
 class_tree = create_class_tree()
 
 # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-if resample == True:
+if resample is True:
     [input_data_train, output_data_train] = slice_data(train_data_frame)
-    train_data_frame = resample_data(input_data_train, output_data_train)
+    train_data_frame = resample_data(input_data_train, output_data_train, resampler_option)
     train_data_frame = pd.DataFrame(input_data_train)
     train_data_frame['class'] = output_data_train
 
@@ -273,7 +289,10 @@ predicted = convert_to_binary_output(prediction)
 if not os.path.isdir(result_dir):
     os.mkdir(result_dir)
 
-file_path = result_dir + '\\result_hierarchical_' + classifier + '_resample_' + str(resample) + '.csv'
+if resample is True:
+    file_path = result_dir + '\\result_hierarchical_' + classifier + '_resample_' + str(resample) + '_'+ str(resampler_option) + '.csv'
+else:
+    file_path = result_dir + '\\result_hierarchical_' + classifier + '_resample_' + str(resample) + '.csv'
 
 print('Writing result to csv')
 # Save result in csv

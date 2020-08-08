@@ -24,9 +24,9 @@ CSV_SPACER = ";"
 
 data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase2/rydles_covid_19_fase2_train.csv'
 classifier = "rf" #rf, mlp or svm
-resample = True
-local_resample = False
-resampler_option = 'smote-enn'
+resample = False
+local_resample = True
+resampler_option = 'borderline-smote'
 result_dir = '../../Result_Hierarchical'
 accuracy_array = []
 accuracy_covid_array = []
