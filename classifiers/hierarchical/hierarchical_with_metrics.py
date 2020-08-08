@@ -24,9 +24,9 @@ CSV_SPACER = ";"
 
 data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase2/rydles_covid_19_fase2_train.csv'
 classifier = "rf" #rf, mlp or svm
-resample = False
+resample = True
 local_resample = False
-resampler_option = 'ros'
+resampler_option = 'smote-enn'
 result_dir = '../../Result_Hierarchical'
 accuracy_array = []
 accuracy_covid_array = []
@@ -100,16 +100,16 @@ def relabel_to_current_class(class_name, relabeled_data_frame):
 
 def retrieve_data_lcpn(tree, data_frame):
     class_data = pd.DataFrame()
-    if tree.is_leaf == True:
+    if tree.is_leaf is True:
         return data_frame[data_frame['class']==tree.class_name]
     else:
         class_data = class_data.append(retrieve_data_lcpn(tree.left, data_frame))
         class_data = class_data.append(retrieve_data_lcpn(tree.right, data_frame))
 
-        if local_resample == True:
+        if local_resample is True:
             print('------------Local Distribution for class: {}----------------'.format(tree.class_name))
             [input_data, output_data] = slice_data(class_data)
-            class_data = resample_data(input_data, output_data)
+            class_data = resample_data(input_data, output_data,resampler_option)
             print('------------------------------------------------------------')
 
         tree.data = class_data
@@ -120,7 +120,7 @@ def retrieve_data_lcpn(tree, data_frame):
         return class_data_relabeled
 
 def train_lcpn(tree):
-    if tree.is_leaf == True:
+    if tree.is_leaf is True:
         return
     else:
         # Will train only for parent node classes
@@ -271,7 +271,7 @@ def plot_confusion_matrix(cm, classes, image_name,
     #plt.show(block=False)
     plt.close()
 
-def resample_data(input_data_train, output_data_train):
+def resample_data(input_data_train, output_data_train, resampler_option):
 
     # Original class distribution
     count_per_class(output_data_train)
@@ -320,8 +320,8 @@ for train_index, test_index in kfold.split(input_data, output_data):
     count_per_class(output_data_train)
 
     # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-    if resample_data == True:
-        train_data_frame = resample_data(input_data_train, output_data_train)
+    if resample is True:
+        train_data_frame = resample_data(input_data_train, output_data_train,resampler_option)
     else:
         train_data_frame = pd.DataFrame(input_data_train)
         train_data_frame['class'] = output_data_train

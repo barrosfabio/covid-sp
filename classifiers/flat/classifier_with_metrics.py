@@ -174,7 +174,7 @@ for train_index, test_index in kfold.split(input_data, output_data):
     count_per_class(outputs_train)
 
     # If resample flag is True, we need to resample the training dataset by generating new synthetic samples
-    if resample == True:
+    if resample is True:
         resampler = define_resampler(resample_algorithm)
         print("Resampling data")
         [input_data_train, output_data_train] = resampler.fit_resample(inputs_train, outputs_train)# Original class distribution
