@@ -26,10 +26,12 @@ data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase2/rydl
 classifier = "rf" #rf, mlp or svm
 resample = False
 local_resample = True
-resampler_option = 'borderline-smote'
+resampler_option = 'adasyn'
 result_dir = '../../Result_Hierarchical'
 accuracy_array = []
 accuracy_covid_array = []
+local_accuracy_dict = {'COVID':[],'NORMAIS':[],'notCOVID':[]}
+strategy = 'all'
 
 class Node:
     class_name = None
@@ -226,17 +228,17 @@ def define_classifier():
 
 def define_resampler(resampler_option):
     if(resampler_option == 'smote'):
-        return SMOTE(sampling_strategy='auto', k_neighbors=5, random_state=42, n_jobs=4)
+        return SMOTE(sampling_strategy=strategy, k_neighbors=5, random_state=42, n_jobs=4)
     elif(resampler_option == 'smote-enn'):
-        return SMOTEENN(sampling_strategy='auto', random_state=42, n_jobs=4)
+        return SMOTEENN(sampling_strategy=strategy, random_state=42, n_jobs=4)
     elif(resampler_option == 'smote-tomek'):
-        return SMOTETomek(sampling_strategy='auto', random_state=42, n_jobs=4)
+        return SMOTETomek(sampling_strategy=strategy, random_state=42, n_jobs=4)
     elif(resampler_option == 'borderline-smote'):
-        return BorderlineSMOTE(sampling_strategy='auto', random_state=42, n_jobs=4)
+        return BorderlineSMOTE(sampling_strategy=strategy, random_state=42, n_jobs=4)
     elif(resampler_option == 'adasyn'):
-        return ADASYN(sampling_strategy='auto', random_state=42, n_jobs=4)
+        return ADASYN(sampling_strategy=strategy, random_state=42, n_jobs=4)
     elif(resampler_option == 'ros'):
-        return RandomOverSampler(sampling_strategy='auto', random_state=42)
+        return RandomOverSampler(sampling_strategy=strategy, random_state=42)
 
 def plot_confusion_matrix(cm, classes, image_name,
                           normalize=True,
@@ -291,24 +293,27 @@ def resample_data(input_data_train, output_data_train, resampler_option):
     return train_data_frame
 
 def calculate_accuracy(output_array, predicted_array):
+    classes = ['COVID','NORMAIS','notCOVID']
+
     accuracy = accuracy_score(output_array, predicted_array)
     accuracy_array.append(accuracy)
     print('Accuracy Score: ' + str(accuracy))
 
-    expected_covid = np.where(output_array == 'COVID')
-    idx_covid = (expected_covid[0].tolist())
-    filtered_output_array = output_array[idx_covid]
-    filtered_predicted_array = predicted_array[idx_covid]
-    covid_accuracy = accuracy_score(filtered_output_array,filtered_predicted_array)
-    accuracy_covid_array.append(covid_accuracy)
-    print('Accuracy Score for COVID class: ' + str(covid_accuracy))
+    for cl in classes:
+        expected_filtered = np.where(output_array == cl)
+        idx_filtered = (expected_filtered[0].tolist())
+        filtered_output_array = output_array[idx_filtered]
+        filtered_predicted_array = predicted_array[idx_filtered]
+        filtered_accuracy = accuracy_score(filtered_output_array,filtered_predicted_array)
+        local_accuracy_dict[cl].append(filtered_accuracy)
+        print('Accuracy Score for {} class:  {}'.format(cl, filtered_accuracy))
 
 # Load data
 data_frame = pd.read_csv(data)
 [input_data, output_data] = slice_data(data_frame)
 
 
-kfold = KFold(n_splits=5, shuffle=True)
+kfold = KFold(n_splits=30, shuffle=True)
 kfold_count = 1
 
 for train_index, test_index in kfold.split(input_data, output_data):
@@ -362,7 +367,9 @@ for train_index, test_index in kfold.split(input_data, output_data):
 
 print('\n--------Average result ----------')
 print('Avg Accuracy: {}'.format(np.mean(accuracy_array)*100))
-print('Avg Accuracy for COVID class: {}'.format(np.mean(accuracy_covid_array)*100))
+print('Avg Accuracy for {} class: {}'.format(POSITIVE_CLASS, np.mean(local_accuracy_dict[POSITIVE_CLASS])*100))
+print('Avg Accuracy for {} class: {}'.format(NEGATIVE_CLASS_1,np.mean(local_accuracy_dict[NEGATIVE_CLASS_1])*100))
+print('Avg Accuracy for {} class: {}'.format(NEGATIVE_CLASS_2,np.mean(local_accuracy_dict[NEGATIVE_CLASS_2])*100))
 
 
 

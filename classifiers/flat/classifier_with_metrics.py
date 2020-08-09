@@ -26,7 +26,7 @@ classifier = 'rf'
 resample = True
 resample_algorithm = 'ros'
 accuracy_array = []
-accuracy_covid_array = []
+local_accuracy_dict = {'COVID':[],'NORMAIS':[],'notCOVID':[]}
 
 # Slice inputs and outputs
 def slice_data(dataset):
@@ -140,17 +140,20 @@ def plot_confusion_matrix(cm, classes, image_name,
     plt.close()
 
 def calculate_accuracy(output_array, predicted_array):
+    classes = ['COVID', 'NORMAIS', 'notCOVID']
+
     accuracy = accuracy_score(output_array, predicted_array)
     accuracy_array.append(accuracy)
     print('Accuracy Score: ' + str(accuracy))
 
-    expected_covid = np.where(output_array == 'COVID')
-    idx_covid = (expected_covid[0].tolist())
-    filtered_output_array = output_array[idx_covid]
-    filtered_predicted_array = predicted_array[idx_covid]
-    covid_accuracy = accuracy_score(filtered_output_array,filtered_predicted_array)
-    accuracy_covid_array.append(covid_accuracy)
-    print('Accuracy Score for COVID class: ' + str(covid_accuracy))
+    for cl in classes:
+        expected_filtered = np.where(output_array == cl)
+        idx_filtered = (expected_filtered[0].tolist())
+        filtered_output_array = output_array[idx_filtered]
+        filtered_predicted_array = predicted_array[idx_filtered]
+        filtered_accuracy = accuracy_score(filtered_output_array, filtered_predicted_array)
+        local_accuracy_dict[cl].append(filtered_accuracy)
+        print('Accuracy Score for {} class:  {}'.format(cl, filtered_accuracy))
 
 # Load data
 data_frame = pd.read_csv(data)
@@ -206,6 +209,8 @@ for train_index, test_index in kfold.split(input_data, output_data):
 
 print('\n--------Average result ----------')
 print('Avg Accuracy: {}'.format(np.mean(accuracy_array)*100))
-print('Avg Accuracy for COVID class: {}'.format(np.mean(accuracy_covid_array)*100))
+print('Avg Accuracy for {} class: {}'.format(POSITIVE_CLASS, np.mean(local_accuracy_dict[POSITIVE_CLASS])*100))
+print('Avg Accuracy for {} class: {}'.format(NEGATIVE_CLASS_1,np.mean(local_accuracy_dict[NEGATIVE_CLASS_1])*100))
+print('Avg Accuracy for {} class: {}'.format(NEGATIVE_CLASS_2,np.mean(local_accuracy_dict[NEGATIVE_CLASS_2])*100))
 
 
