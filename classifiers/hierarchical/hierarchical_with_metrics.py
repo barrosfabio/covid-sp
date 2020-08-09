@@ -13,6 +13,7 @@ import itertools
 from sklearn.metrics import confusion_matrix
 from imblearn.over_sampling import SMOTE, RandomOverSampler, BorderlineSMOTE, ADASYN
 from imblearn.combine import SMOTEENN, SMOTETomek
+from imblearn.ensemble import BalancedRandomForestClassifier, BalancedBaggingClassifier
 
 POSITIVE_CLASS = 'COVID'
 NEGATIVE_CLASS_1 = 'NORMAIS'
@@ -23,15 +24,16 @@ INTERMEDIATE_NEGATIVE_CLASS = 'NOT_NORMAL'
 CSV_SPACER = ";"
 
 data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase2/rydles_covid_19_fase2_train.csv'
+#data = 'C:/Users/Fabio Barros/Git/covid-sp/data/covid_train_59_fase2/covid_sp_train_59.csv'
 classifier = "rf" #rf, mlp or svm
 resample = False
-local_resample = True
-resampler_option = 'adasyn'
+local_resample = False
+resampler_option = 'smote'
 result_dir = '../../Result_Hierarchical'
 accuracy_array = []
 accuracy_covid_array = []
 local_accuracy_dict = {'COVID':[],'NORMAIS':[],'notCOVID':[]}
-strategy = 'all'
+strategy = 'auto'
 
 class Node:
     class_name = None
@@ -108,18 +110,28 @@ def retrieve_data_lcpn(tree, data_frame):
         class_data = class_data.append(retrieve_data_lcpn(tree.left, data_frame))
         class_data = class_data.append(retrieve_data_lcpn(tree.right, data_frame))
 
-        if local_resample is True:
-            print('------------Local Distribution for class: {}----------------'.format(tree.class_name))
-            [input_data, output_data] = slice_data(class_data)
-            class_data = resample_data(input_data, output_data,resampler_option)
-            print('------------------------------------------------------------')
-
         tree.data = class_data
 
         # Rename to the current class before returning to parent class
         class_data_relabeled = relabel_to_current_class(tree.class_name, class_data.copy())
 
         return class_data_relabeled
+
+def resample_data_lcpn(tree, data_frame):
+    if tree.is_leaf is True:
+        return
+    else:
+        # Retrieve the data to resample
+        [input_data_train, output_data_train] = slice_data(tree.data)
+        print('\n------------Local Distribution for class: {}----------------'.format(tree.class_name))
+        class_data = resample_data(input_data_train, output_data_train, resampler_option)
+        tree.data = class_data
+
+        resample_data_lcpn(tree.left, data_frame)
+        resample_data_lcpn(tree.right, data_frame)
+
+        return
+
 
 def train_lcpn(tree):
     if tree.is_leaf is True:
@@ -218,13 +230,18 @@ def count_per_class(output_data):
 
 def define_classifier():
     if classifier == 'rf':
-        return RandomForestClassifier(criterion="gini", min_samples_leaf=10, min_samples_split=20, max_leaf_nodes=None,
-                                      max_depth=10)
+        return RandomForestClassifier(criterion="gini", n_estimators=150)
     elif classifier == 'mlp':
         return MLPClassifier(hidden_layer_sizes=(60), activation='logistic', verbose=False, early_stopping=True,
                              validation_fraction=0.2)
     elif classifier == 'svm':
         return SVC(gamma='auto', probability=True)
+
+    elif classifier == 'balanced-rf':
+        return BalancedRandomForestClassifier(criterion='gini', n_estimators=150)
+
+    elif classifier == 'bagging':
+        return BalancedBaggingClassifier(base_estimator=RandomForestClassifier(criterion="gini", n_estimators=150), sampling_strategy='auto', replacement=False, random_state=0)
 
 def define_resampler(resampler_option):
     if(resampler_option == 'smote'):
@@ -313,7 +330,7 @@ data_frame = pd.read_csv(data)
 [input_data, output_data] = slice_data(data_frame)
 
 
-kfold = KFold(n_splits=30, shuffle=True)
+kfold = KFold(n_splits=5, shuffle=True)
 kfold_count = 1
 
 for train_index, test_index in kfold.split(input_data, output_data):
@@ -338,6 +355,9 @@ for train_index, test_index in kfold.split(input_data, output_data):
 
     class_tree = create_class_tree()
     retrieve_data_lcpn(class_tree, train_data_frame)
+
+    if local_resample is True:
+        resample_data_lcpn(class_tree, train_data_frame)
 
     # Train
     train_lcpn(class_tree)

@@ -102,11 +102,6 @@ def retrieve_data_lcpn(tree, data_frame):
     else:
         class_data = class_data.append(retrieve_data_lcpn(tree.left, data_frame))
         class_data = class_data.append(retrieve_data_lcpn(tree.right, data_frame))
-        if local_resample is True:
-            print('------------Local Distribution for class: {}----------------'.format(tree.class_name))
-            [input_data, output_data] = slice_data(class_data)
-            class_data = resample_data(input_data, output_data, resampler_option)
-            print('------------------------------------------------------------')
 
         tree.data = class_data
 
@@ -115,6 +110,21 @@ def retrieve_data_lcpn(tree, data_frame):
         class_data_relabeled = relabel_to_current_class(tree.class_name, class_data.copy())
 
         return class_data_relabeled
+
+def resample_data_lcpn(tree, data_frame):
+    if tree.is_leaf is True:
+        return
+    else:
+        # Retrieve the data to resample
+        [input_data_train, output_data_train] = slice_data(tree.data)
+        print('\n------------Local Distribution for class: {}----------------'.format(tree.class_name))
+        class_data = resample_data(input_data_train, output_data_train, resampler_option)
+        tree.data = class_data
+
+        resample_data_lcpn(tree.left, data_frame)
+        resample_data_lcpn(tree.right, data_frame)
+
+        return
 
 def train_lcpn(tree):
     if tree.is_leaf is True:
@@ -264,6 +274,9 @@ if resample is True:
     train_data_frame['class'] = output_data_train
 
 retrieve_data_lcpn(class_tree, train_data_frame)
+
+if local_resample is True:
+    resample_data_lcpn(class_tree, train_data_frame)
 
 # Train
 print('Started training...')
