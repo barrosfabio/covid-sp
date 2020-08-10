@@ -24,9 +24,9 @@ train_data = 'C:/Users/Fabio Barros/Git/covid-sp/data/rydles_covid_train_59_fase
 test_data = 'C:/Users/Fabio Barros/Git/covid-sp/data/covid_test_59_fase3/covid_sp_test_59_fase3.csv'
 classifier = "rf" #rf, mlp or svm
 resample = False
-local_resample = False
+local_resample = True
 result_dir = 'Result_Hierarchical'
-resampler_option = 'smote-enn'
+resampler_option = 'adasyn'
 
 class Node:
     class_name = None
@@ -304,6 +304,9 @@ if not os.path.isdir(result_dir):
 
 if resample is True:
     file_path = result_dir + '\\result_hierarchical_' + classifier + '_resample_' + str(resample) + '_'+ str(resampler_option) + '.csv'
+elif local_resample is True:
+    file_path = result_dir + '\\result_hierarchical_' + classifier + '_local_resample_' + str(local_resample) + '_' + str(
+        resampler_option) + '.csv'
 else:
     file_path = result_dir + '\\result_hierarchical_' + classifier + '_resample_' + str(resample) + '.csv'
 
