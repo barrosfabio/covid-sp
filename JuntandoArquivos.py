@@ -23,15 +23,27 @@ Este 'notebook' está organizado da seguinta maneira.
 Para escolher a funcao do script altere a variavel 'FUNCAO_SCRIPT'.
 Opções: 'extrair', 'classificar'
 
+Para usar o extrator, lembre-se de alterar o caminhos dos diretórios na variaveis "train_directory" e "test_directory".
+
+Para usar o classificador, lembre-se de alterar o caminho dos dos arquivos nas variáveis "train_data_path" e "test_data_path".
+
 """
 
 # FUNCAO_SCRIPT = 'extrair'
 FUNCAO_SCRIPT = 'classificar'
 
+# Caminho onde estão localizadas as imagens de treino e teste para o extrator
+train_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Train'
+test_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Test'
+lbp_extractor = 'nri_uniform'
+
+# Caminho para os arquivos de treino e teste para o classificador
+train_data_path = 'T:/Projetos_Documentos/GitHub/covid-sp/Feature Matrix Train/feature_matrix_train.csv'
+test_data_path = 'T:/Projetos_Documentos/GitHub/covid-sp/Feature Matrix Test/feature_matrix_test.csv'
+classifier = "rf"  # rf, mlp or svm
 
 
 """A BAIXO ESTÃO TODAS AS FUNÇÕES"""
-
 if FUNCAO_SCRIPT == 'extrair':
     print('Você escolheu EXTRAIR as características das imagens...')
 
@@ -39,10 +51,7 @@ if FUNCAO_SCRIPT == 'extrair':
     UNIFORM_FEATURE_NUMBER = 10
     NRI_UNIFORM_FEATURE_NUMBER = 59
 
-    # Diretorios de treino e teste onde estão localizadas as imagens
-    train_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Train'
-    test_directory = 'T:/Projetos_Documentos/GitHub/covid-sp/Test'
-    lbp_extractor = 'nri_uniform'
+
 
     # Setting up the resulting matrices directories
     feature_matrix_train_path = 'Feature Matrix Train'
@@ -231,7 +240,6 @@ if FUNCAO_SCRIPT == 'extrair':
 
     print('\n\n- Arquivo de treino salvo em: ', str('./' + feature_matrix_train_path + '/feature_matrix_train.csv'))
     print('- Arquivo de teste salvo em: ', str('./' + feature_matrix_test_path + '/feature_matrix_test.csv'))
-
 elif FUNCAO_SCRIPT == 'classificar':
     print('Você escolheu CLASSIFICAR as imagens...')
 
@@ -241,9 +249,7 @@ elif FUNCAO_SCRIPT == 'classificar':
     NEGATIVE_CLASS_2 = 'notCOVID'
     INTERMEDIATE_NEGATIVE_CLASS = 'NOT_NORMAL'
 
-    train_data_path = 'T:/Projetos_Documentos/GitHub/covid-sp/Feature Matrix Train/feature_matrix_train.csv'
-    test_data_path = 'T:/Projetos_Documentos/GitHub/covid-sp/Feature Matrix Test/feature_matrix_test.csv'
-    classifier = "rf"  # rf, mlp or svm
+
     resample = False
 
     class Node:
